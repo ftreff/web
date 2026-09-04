@@ -26,8 +26,6 @@
     .label {
         color: #9f9;
     }
-
-    /* Visual Hash Block */
     #hashBlock {
         display: grid;
         grid-template-columns: repeat(16, 10px);
@@ -75,10 +73,7 @@
     <p><span class="label">City:</span> <span id="city"></span></p>
     <p><span class="label">Region:</span> <span id="region"></span></p>
     <p><span class="label">Country:</span> <span id="country"></span></p>
-
-    <!-- MOVED HERE -->
     <p><span class="label">Flag:</span> <img id="flag" style="height:20px;vertical-align:middle;"></p>
-
     <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
     <p><span class="label">Latitude:</span> <span id="lat"></span></p>
     <p><span class="label">Longitude:</span> <span id="lon"></span></p>
@@ -144,177 +139,188 @@
 <!-- FINGERPRINT -->
 <div class="section">
     <h2>FINGERPRINT</h2>
-
-    <!-- MOVED ABOVE -->
     <div id="hashBlock"></div>
-
     <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
 </div>
 
 <script>
-function isIPv6(ip) { return ip && ip.includes(":"); }
+function isIPv6(ip){return ip && ip.includes(":");}
 
-// IP + GEO + SECURITY (ipwho.is)
+// IP + GEO + SECURITY via ipwho.is
 fetch("https://ipwho.is/")
   .then(r => r.json())
   .then(d => {
     const publicIp = d.ip || "Unavailable";
-    publicIpElem.textContent = publicIp;
+    document.getElementById("publicIp").textContent = publicIp;
 
-    hostname.textContent = d.connection?.domain || "Unavailable";
-    org.textContent = d.connection?.isp || "Unavailable";
-    asn.textContent = d.connection?.asn || "Unavailable";
+    document.getElementById("hostname").textContent = d.connection?.domain || "Unavailable";
+    document.getElementById("org").textContent = d.connection?.isp || "Unavailable";
+    document.getElementById("asn").textContent = d.connection?.asn || "Unavailable";
 
     let rep = 100;
     if (d.security?.vpn) rep -= 30;
     if (d.security?.proxy) rep -= 20;
     if (d.security?.tor) rep -= 50;
-    reputation.textContent = rep;
+    document.getElementById("reputation").textContent = rep;
 
-    if (d.flag?.img) flag.src = d.flag.img;
+    if (d.flag?.img) document.getElementById("flag").src = d.flag.img;
 
-    city.textContent = d.city || "Unavailable";
-    region.textContent = d.region || "Unavailable";
-    country.textContent = d.country || "Unavailable";
-    postal.textContent = d.postal || "Unavailable";
-    lat.textContent = d.latitude || "Unavailable";
-    lon.textContent = d.longitude || "Unavailable";
+    document.getElementById("city").textContent = d.city || "Unavailable";
+    document.getElementById("region").textContent = d.region || "Unavailable";
+    document.getElementById("country").textContent = d.country || "Unavailable";
+    document.getElementById("postal").textContent = d.postal || "Unavailable";
+    document.getElementById("lat").textContent = d.latitude || "Unavailable";
+    document.getElementById("lon").textContent = d.longitude || "Unavailable";
 
-    vpn.textContent = d.security?.vpn ? "Yes" : "No";
-    proxy.textContent = d.security?.proxy ? "Yes" : "No";
-    tor.textContent = d.security?.tor ? "Yes" : "No";
+    document.getElementById("vpn").textContent = d.security?.vpn ? "Yes" : "No";
+    document.getElementById("proxy").textContent = d.security?.proxy ? "Yes" : "No";
+    document.getElementById("tor").textContent = d.security?.tor ? "Yes" : "No";
 
     let score = 0;
     if (d.security?.vpn) score += 30;
     if (d.security?.proxy) score += 20;
     if (d.security?.tor) score += 50;
-    threat.textContent = score;
+    document.getElementById("threat").textContent = score;
 
-    if (!isIPv6(publicIp)) {
+    if (!isIPv6(publicIp) && publicIp !== "Unavailable") {
         const ptrName = publicIp.split(".").reverse().join(".") + ".in-addr.arpa";
         fetch(`https://dns.google/resolve?name=${ptrName}&type=PTR`)
           .then(r => r.json())
           .then(res => {
-              ptr.textContent = res.Answer?.[0]?.data || "Unavailable";
+              const ans = res.Answer && res.Answer[0] && res.Answer[0].data;
+              document.getElementById("ptr").textContent = ans || "Unavailable";
           })
-          .catch(() => ptr.textContent = "Unavailable");
+          .catch(() => document.getElementById("ptr").textContent = "Unavailable");
     } else {
-        ptr.textContent = "Unavailable (IPv6 PTR not implemented)";
+        document.getElementById("ptr").textContent = "Unavailable (IPv6 PTR not implemented)";
     }
+  })
+  .catch(() => {
+    document.getElementById("publicIp").textContent = "Error";
   });
 
-// IPv4 / IPv6 diagnostics
-async function ipDiagnostics() {
+// IPv4 / IPv6 diagnostics via DoH
+async function ipDiagnostics(){
     let v4g=null,v4c=null,v6g=null,v6c=null;
 
-    try {
+    // IPv4 Google
+    try{
         const g4 = await fetch("https://dns.google/resolve?name=o-o.myaddr.l.google.com&type=TXT")
             .then(r=>r.json());
         v4g = g4.Answer?.[0]?.data?.replace(/"/g,"") || null;
-        ipv4_google.textContent = v4g || "Unavailable";
-    } catch { ipv4_google.textContent="Unavailable"; }
+        document.getElementById("ipv4_google").textContent = v4g || "Unavailable";
+    }catch{document.getElementById("ipv4_google").textContent="Unavailable";}
 
-    try {
+    // IPv4 Cloudflare
+    try{
         const c4 = await fetch("https://cloudflare-dns.com/dns-query?name=whoami.cloudflare&type=TXT",
             {headers:{accept:"application/dns-json"}}).then(r=>r.json());
         v4c = c4.Answer?.[0]?.data?.replace(/"/g,"") || null;
-        ipv4_cloudflare.textContent = v4c || "Unavailable";
-    } catch { ipv4_cloudflare.textContent="Unavailable"; }
+        document.getElementById("ipv4_cloudflare").textContent = v4c || "Unavailable";
+    }catch{document.getElementById("ipv4_cloudflare").textContent="Unavailable";}
 
-    try {
+    // IPv6 Google (pick AAAA record, not CNAME)
+    try{
         const g6 = await fetch("https://dns.google/resolve?name=ipv6.google.com&type=AAAA")
             .then(r=>r.json());
-        v6g = g6.Answer?.[0]?.data || null;
-        ipv6_google.textContent = v6g || "Unavailable";
-    } catch { ipv6_google.textContent="Unavailable"; }
+        if (g6.Answer && g6.Answer.length){
+            const aaa = g6.Answer.find(a => a.type === 28) || g6.Answer[g6.Answer.length-1];
+            v6g = aaa.data || null;
+        }
+        document.getElementById("ipv6_google").textContent = v6g || "Unavailable";
+    }catch{document.getElementById("ipv6_google").textContent="Unavailable";}
 
-    try {
+    // IPv6 Cloudflare
+    try{
         const c6 = await fetch("https://cloudflare-dns.com/dns-query?name=ipv6.cloudflare.com&type=AAAA",
             {headers:{accept:"application/dns-json"}}).then(r=>r.json());
-        v6c = c6.Answer?.[0]?.data || null;
-        ipv6_cloudflare.textContent = v6c || "Unavailable";
-    } catch { ipv6_cloudflare.textContent="Unavailable"; }
+        if (c6.Answer && c6.Answer.length){
+            const aaa = c6.Answer.find(a => a.type === 28) || c6.Answer[c6.Answer.length-1];
+            v6c = aaa.data || null;
+        }
+        document.getElementById("ipv6_cloudflare").textContent = v6c || "Unavailable";
+    }catch{document.getElementById("ipv6_cloudflare").textContent="Unavailable";}
 
     const hasV4 = !!(v4g || v4c);
     const hasV6 = !!(v6g || v6c);
 
-    dualStack.textContent =
+    document.getElementById("dualStack").textContent =
         hasV4 && hasV6 ? "Dual‑stack (IPv4 + IPv6)" :
         hasV4 ? "IPv4 only" :
         hasV6 ? "IPv6 only" :
         "No IP detected via DoH";
 
-    ipv6Reach.textContent = hasV6 ? "Reachable" : "Not reachable";
+    document.getElementById("ipv6Reach").textContent = hasV6 ? "Reachable" : "Not reachable";
 
-    if (v6g && v6c) {
-        ipv6Privacy.textContent =
+    if (v6g && v6c){
+        document.getElementById("ipv6Privacy").textContent =
             v6g !== v6c ? "Likely enabled (different IPv6 per resolver)" :
             "Likely disabled (same IPv6 per resolver)";
-    } else if (hasV6) {
-        ipv6Privacy.textContent = "Unknown (only one resolver reports IPv6)";
-    } else {
-        ipv6Privacy.textContent = "Unavailable (no IPv6)";
+    }else if (hasV6){
+        document.getElementById("ipv6Privacy").textContent = "Unknown (only one resolver reports IPv6)";
+    }else{
+        document.getElementById("ipv6Privacy").textContent = "Unavailable (no IPv6)";
     }
 }
 ipDiagnostics();
 
 // DNS diagnostics
-function runDnsDiagnostics() {
-    dnsResolver.textContent = "dns.google (DoH)";
-    dnsProtocol.textContent = "HTTPS (DoH)";
+function runDnsDiagnostics(){
+    document.getElementById("dnsResolver").textContent = "dns.google (DoH)";
+    document.getElementById("dnsProtocol").textContent = "HTTPS (DoH)";
 
     fetch("https://dns.google/resolve?name=example.com&type=A&do=1")
       .then(r=>r.json())
       .then(res=>{
-          dnssec.textContent = res.AD ? "Supported" : "Not validated";
-          ecs.textContent = res.edns_client_subnet || "Not present";
-          resolverCountry.textContent = "Unknown (DoH endpoint)";
-          resolverAsn.textContent = "Unknown (DoH endpoint)";
+          document.getElementById("dnssec").textContent = res.AD ? "Supported" : "Not validated";
+          document.getElementById("ecs").textContent = res.edns_client_subnet || "Not present";
+          document.getElementById("resolverCountry").textContent = "Unknown (DoH endpoint)";
+          document.getElementById("resolverAsn").textContent = "Unknown (DoH endpoint)";
       });
 
-    const bogus="nonexistent-"+Math.random().toString(16).slice(2)+".example";
+    const bogus = "nonexistent-"+Math.random().toString(16).slice(2)+".example";
     fetch(`https://dns.google/resolve?name=${bogus}&type=A&do=1`)
       .then(r=>r.json())
       .then(res=>{
-          nxdomain.textContent =
+          document.getElementById("nxdomain").textContent =
               res.Status===3 ? "Proper NXDOMAIN" : `Unexpected (${res.Status})`;
-          dnsLeak.textContent = "No leak (DoH)";
+          document.getElementById("dnsLeak").textContent = "No leak (DoH)";
       });
 }
 runDnsDiagnostics();
 
 // Browser & system
-browser.textContent = navigator.userAgent.split(" ")[0];
-version.textContent = navigator.appVersion;
-os.textContent = navigator.platform;
-lang.textContent = navigator.language;
-timezone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-touch.textContent = navigator.maxTouchPoints>0?"Yes":"No";
+document.getElementById("browser").textContent = navigator.userAgent.split(" ")[0];
+document.getElementById("version").textContent = navigator.appVersion;
+document.getElementById("os").textContent = navigator.platform;
+document.getElementById("lang").textContent = navigator.language;
+document.getElementById("timezone").textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+document.getElementById("touch").textContent = navigator.maxTouchPoints>0?"Yes":"No";
 
 // Hardware
-cpu.textContent = navigator.hardwareConcurrency;
-memory.textContent = navigator.deviceMemory || "Unknown";
+document.getElementById("cpu").textContent = navigator.hardwareConcurrency;
+document.getElementById("memory").textContent = navigator.deviceMemory || "Unknown";
 
 navigator.getBattery().then(b=>{
-    battery.textContent = Math.round(b.level*100)+"%";
-    charging.textContent = b.charging?"Yes":"No";
+    document.getElementById("battery").textContent = Math.round(b.level*100)+"%";
+    document.getElementById("charging").textContent = b.charging?"Yes":"No";
 });
 
 // Network
-const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-if(conn){
-    connection.textContent=conn.effectiveType;
-    downlink.textContent=conn.downlink;
-    rtt.textContent=conn.rtt;
+const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+if (conn){
+    document.getElementById("connection").textContent = conn.effectiveType;
+    document.getElementById("downlink").textContent = conn.downlink;
+    document.getElementById("rtt").textContent = conn.rtt;
 }else{
-    connection.textContent="Unknown";
-    downlink.textContent="Unknown";
-    rtt.textContent="Unknown";
+    document.getElementById("connection").textContent = "Unknown";
+    document.getElementById("downlink").textContent = "Unknown";
+    document.getElementById("rtt").textContent = "Unknown";
 }
 
 // Display
-resolution.textContent = `${screen.width} x ${screen.height}`;
-colorDepth.textContent = screen.colorDepth;
+document.getElementById("resolution").textContent = `${screen.width} x ${screen.height}`;
+document.getElementById("colorDepth").textContent = screen.colorDepth;
 
 // Fingerprint
 function canvasFingerprint(){
@@ -325,17 +331,18 @@ function canvasFingerprint(){
     ctx.fillText("fingerprint_test_string",2,2);
     return btoa(c.toDataURL());
 }
-const fp=canvasFingerprint();
-fingerprint.textContent=fp;
+const fp = canvasFingerprint();
+document.getElementById("fingerprint").textContent = fp;
 
 function renderHashBlock(hash){
-    hashBlock.innerHTML="";
+    const block = document.getElementById("hashBlock");
+    block.innerHTML = "";
     for(let i=0;i<256;i++){
         const cell=document.createElement("div");
         cell.className="hashCell";
         const val=hash.charCodeAt(i%hash.length);
         cell.style.opacity=(val%100)/100;
-        hashBlock.appendChild(cell);
+        block.appendChild(cell);
     }
 }
 renderHashBlock(fp);
