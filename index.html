@@ -11,10 +11,10 @@
         font-family: Consolas, monospace;
         padding: 20px;
     }
-    h1 {
+    pre {
         color: #0f0;
-        border-bottom: 1px solid #0f0;
-        padding-bottom: 10px;
+        font-size: 12px;
+        line-height: 12px;
     }
     .section {
         margin-bottom: 25px;
@@ -33,7 +33,21 @@
 </head>
 <body>
 
-<h1>HACKER ACCESS PANEL</h1>
+<!-- ASCII ART HEADER -->
+<pre>
+      .___.       .___.       .___.       .___.       .___.
+   ___|   |_______|   |_______|   |_______|   |_______|   |___
+  /   |   |   _   |   |   _   |   |   _   |   |   _   |   |   \
+ /    |   |  |_|  |   |  |_|  |   |  |_|  |   |  |_|  |   |    \
+/_____|___|_______|___|_______|___|_______|___|_______|___|_____\
+\-----+---+-------+---+-------+---+-------+---+-------+---+-----/
+ \    |   |  .-.  |   |  .-.  |   |  .-.  |   |  .-.  |   |    /
+  \   |   | (   ) |   | (   ) |   | (   ) |   | (   ) |   |   /
+   \__|___|__`-'__|___|__`-'__|___|__`-'__|___|__`-'__|___|__/
+      |   |   |   |   |   |   |   |   |   |   |   |   |   |
+      '---'   '---'   '---'   '---'   '---'   '---'   '---'
+      [ NETWORK MATRIX • SIGNAL ROUTING • DARKNET RELAYS ]
+</pre>
 
 <div class="section">
     <h2>IP & GEOLOCATION</h2>
@@ -46,6 +60,15 @@
     <p><span class="label">Longitude:</span> <span id="lon"></span></p>
     <p><span class="label">ISP:</span> <span id="org"></span></p>
     <p><span class="label">ASN:</span> <span id="asn"></span></p>
+</div>
+
+<div class="section">
+    <h2>SECURITY / THREAT</h2>
+    <p><span class="label">VPN:</span> <span id="vpn"></span></p>
+    <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
+    <p><span class="label">Proxy:</span> <span id="proxy"></span></p>
+    <p><span class="label">Relay:</span> <span id="relay"></span></p>
+    <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
 </div>
 
 <div class="section">
@@ -86,7 +109,7 @@
 </div>
 
 <script>
-// ---------------- IP & GEO ----------------
+// ---------------- IP + GEO + SECURITY ----------------
 fetch("https://ipapi.co/json/")
   .then(r => r.json())
   .then(d => {
@@ -99,6 +122,13 @@ fetch("https://ipapi.co/json/")
     lon.textContent = d.longitude;
     org.textContent = d.org;
     asn.textContent = d.asn;
+
+    // Security fields
+    vpn.textContent = d.security?.vpn ? "Yes" : "No";
+    tor.textContent = d.security?.tor ? "Yes" : "No";
+    proxy.textContent = d.security?.proxy ? "Yes" : "No";
+    relay.textContent = d.security?.relay ? "Yes" : "No";
+    threat.textContent = d.security?.threat_score ?? "Unknown";
   });
 
 // ---------------- BROWSER & SYSTEM ----------------
