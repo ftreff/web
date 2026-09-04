@@ -12,7 +12,7 @@
   #hashBlock { display:grid; grid-template-columns:repeat(16,10px); grid-auto-rows:10px; gap:2px; margin-bottom:10px; }
   .hashCell { width:10px; height:10px; background:#0f0; opacity:0.15; }
   #debug { color:#ff6; font-size:12px; display:none; white-space:pre-wrap; margin-top:10px; border-top:1px dashed #444; padding-top:10px; }
-  #debugToggle { background:#022; color:#9f9; border:1px solid #0f0; padding:6px 10px; cursor:pointer; margin-bottom:12px; }
+  #debugToggle { background:#022; color:#9f9; border:1px solid #0f0; padding:6px 10px; cursor:pointer; margin:0; }
   .small { font-size:12px; color:#9f9; }
 
   /* Footer under fingerprint (outside the green box) */
@@ -28,12 +28,11 @@
     font-size:13px;
   }
   #footerLeft { text-align:left; }
+  #footerCenter { text-align:center; flex: 0 0 auto; }
   #footerRight { text-align:right; }
 </style>
 </head>
 <body>
-
-<button id="debugToggle">Show debug</button>
 
 <!-- IP BOX -->
 <div class="section">
@@ -122,10 +121,13 @@
   <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
 </div>
 
-<!-- Footer placed outside the FINGERPRINT box -->
+<!-- Footer placed outside the FINGERPRINT box with centered debug button -->
 <div id="footerBar" aria-hidden="false">
   <div id="footerLeft">—</div>
-  <div id="footerRight">v2.7.1</div>
+  <div id="footerCenter">
+    <button id="debugToggle">Show debug</button>
+  </div>
+  <div id="footerRight">v2.7.2</div>
 </div>
 
 <!-- hidden debug output -->
@@ -228,8 +230,8 @@ async function fetchPublicIpAndGeo(){
 
 /* ---------- Main init ---------- */
 (async function init(){
-  // debug toggle
-  const dbgToggle = document.getElementById('debugToggle');
+  // debug toggle (centered in footer)
+  const dbgToggle = $('debugToggle');
   dbgToggle.addEventListener('click', () => {
     const dbg = $('debug');
     dbg.style.display = dbg.style.display === 'block' ? 'none' : 'block';
