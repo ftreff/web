@@ -41,20 +41,6 @@
         background: #0f0;
         opacity: 0.15;
     }
-
-    /* Map Box */
-    #mapBox {
-        margin-top: 15px;
-        border: 1px solid #0f0;
-        padding: 5px;
-        background: #001100;
-        text-align: center;
-    }
-    #mapImage {
-        width: 100%;
-        max-width: 350px;
-        border: 1px solid #0f0;
-    }
 </style>
 </head>
 <body>
@@ -76,10 +62,6 @@
     <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
     <p><span class="label">Latitude:</span> <span id="lat"></span></p>
     <p><span class="label">Longitude:</span> <span id="lon"></span></p>
-
-    <div id="mapBox">
-        <img id="mapImage" alt="Map loading...">
-    </div>
 </div>
 
 <!-- SECURITY -->
@@ -140,30 +122,22 @@
 fetch("https://ipapi.co/json/")
   .then(r => r.json())
   .then(d => {
-    ip.textContent = d.ip;
-    org.textContent = d.org;
-    asn.textContent = d.asn;
+    ip.textContent = d.ip || "Unavailable";
+    org.textContent = d.org || "Unavailable";
+    asn.textContent = d.asn || "Unavailable";
 
-    city.textContent = d.city;
-    region.textContent = d.region;
-    country.textContent = d.country_name;
-    postal.textContent = d.postal;
-    lat.textContent = d.latitude;
-    lon.textContent = d.longitude;
+    city.textContent = d.city || "Unavailable";
+    region.textContent = d.region || "Unavailable";
+    country.textContent = d.country_name || "Unavailable";
+    postal.textContent = d.postal || "Unavailable";
+    lat.textContent = d.latitude || "Unavailable";
+    lon.textContent = d.longitude || "Unavailable";
 
     vpn.textContent = d.security?.vpn ? "Yes" : "No";
     tor.textContent = d.security?.tor ? "Yes" : "No";
     proxy.textContent = d.security?.proxy ? "Yes" : "No";
     relay.textContent = d.security?.relay ? "Yes" : "No";
     threat.textContent = d.security?.threat_score ?? "Unknown";
-
-    // MAP TILE
-    const mapLat = d.latitude;
-    const mapLon = d.longitude;
-
-    const mapURL = `https://tile.openstreetmap.org/15/${Math.floor((mapLon + 180) * 2**15 / 360)}/${Math.floor((1 - Math.log(Math.tan(mapLat * Math.PI/180) + 1 / Math.cos(mapLat * Math.PI/180)) / Math.PI) * 2**14)}.png`;
-
-    document.getElementById("mapImage").src = mapURL;
   });
 
 // BROWSER & SYSTEM
