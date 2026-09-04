@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Hacker Info Dashboard</title>
+<title>FAT Warez Network Dashboard</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   body { background:#000; color:#0f0; font-family:Consolas,monospace; padding:18px; }
@@ -14,6 +14,7 @@
   #debug { color:#ff6; font-size:12px; display:none; white-space:pre-wrap; margin-top:10px; border-top:1px dashed #444; padding-top:10px; }
   #debugToggle { background:#022; color:#9f9; border:1px solid #0f0; padding:6px 10px; cursor:pointer; margin:0; }
   .small { font-size:12px; color:#9f9; }
+  .note { color:#9f9; font-size:12px; margin-left:6px; }
 
   /* Footer under fingerprint (outside the green box) */
   #footerBar {
@@ -40,8 +41,8 @@
 
   <p><span class="label">Public IP (primary):</span> <span id="publicIp"></span></p>
 
-  <p><span class="label">IPv4:</span> <span id="ipv4"></span></p>
-  <p><span class="label">IPv6:</span> <span id="ipv6"></span></p>
+  <p><span class="label">IPv4:</span> <span id="ipv4"></span><span id="ipv4_note" class="note"></span></p>
+  <p><span class="label">IPv6:</span> <span id="ipv6"></span><span id="ipv6_note" class="note"></span></p>
 
   <p><span class="label">Dual‑Stack Status:</span> <span id="dualStack"></span></p>
   <p><span class="label">IPv6 Reachability:</span> <span id="ipv6Reach"></span></p>
@@ -127,7 +128,7 @@
   <div id="footerCenter">
     <button id="debugToggle">Show debug</button>
   </div>
-  <div id="footerRight">v2.7.2</div>
+  <div id="footerRight">v2.7.3</div>
 </div>
 
 <!-- hidden debug output -->
@@ -301,14 +302,17 @@ async function fetchPublicIpAndGeo(){
 
   // Fetch public IP + geo with fallbacks
   const ipResult = await fetchPublicIpAndGeo();
+  let primaryPublicIp = null; // store for later authoritative display
   if (!ipResult || !ipResult.data){
     $('publicIp').textContent = 'Error';
     logDebug('No IP data available from any provider');
   } else {
     const src = ipResult.source;
     const data = ipResult.data;
+    // normalize ip field
     let publicIp = data.ip || data.IP || data.ipv4 || data.client_ip || data['ip'] || null;
     if (!publicIp && data.ip) publicIp = data.ip;
+    primaryPublicIp = publicIp || null;
     $('publicIp').textContent = publicIp || 'Unavailable';
 
     if (src === 'ipwho.is' && data) {
@@ -376,20 +380,18 @@ async function fetchPublicIpAndGeo(){
 
   /* ---------- IPv4/IPv6 diagnostics via Google DoH (single-resolver) ---------- */
   async function ipDiagnostics(){
-    let v4=null, v6=null;
+    let doh_v4 = null, doh_v6 = null;
 
     // IPv4 via Google TXT
     try {
       const g4 = await dohGoogle('o-o.myaddr.l.google.com', 'TXT');
       if (g4 && g4.Answer && g4.Answer.length){
         const txt = g4.Answer.map(a => a.data).join(' ');
-        v4 = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
+        doh_v4 = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
       }
-      $('ipv4').textContent = v4 || 'Unavailable';
       logDebug('Google IPv4 TXT', g4);
     } catch(e){
       logDebug('IPv4 Google TXT failed', e);
-      $('ipv4').textContent = 'Unavailable';
     }
 
     // IPv6 via Google (AAAA)
@@ -398,23 +400,57 @@ async function fetchPublicIpAndGeo(){
       logDebug('Google IPv6 raw', g6);
       if (g6 && g6.Answer && g6.Answer.length){
         const aaa = g6.Answer.find(a => a.type === 28) || g6.Answer[g6.Answer.length-1];
-        v6 = aaa && aaa.data ? aaa.data : null;
+        doh_v6 = aaa && aaa.data ? aaa.data : null;
       }
-      $('ipv6').textContent = v6 || 'Unavailable';
     } catch(e){
       logDebug('IPv6 Google AAAA failed', e);
-      $('ipv6').textContent = 'Unavailable';
     }
 
-    // Dual-stack status
-    const hasV4 = !!v4;
-    const hasV6 = !!v6;
-    $('dualStack').textContent = hasV4 && hasV6 ? 'Dual‑stack (IPv4 + IPv6)' :
-                              hasV4 ? 'IPv4 only' :
-                              hasV6 ? 'IPv6 only' : 'No IP detected via DoH';
+    // Decide what to display in IPv4/IPv6 fields:
+    // - If we have a primaryPublicIp from ipwho.is (or fallback), use it as authoritative for its family.
+    // - If no primaryPublicIp or it doesn't match the family, fall back to DoH value.
+    // - If both exist and differ, show primaryPublicIp and add a small note with the DoH value and source.
 
-    // IPv6 reachability (simple: DoH AAAA responses)
-    $('ipv6Reach').textContent = hasV6 ? 'Reachable' : 'Not reachable';
+    // IPv4 display
+    const primary = primaryPublicIp;
+    if (primary && !isIPv6(primary)) {
+      $('ipv4').textContent = primary;
+      if (doh_v4 && doh_v4 !== primary) {
+        $('ipv4_note').textContent = `(DoH: ${doh_v4})`;
+        logDebug('IPv4 mismatch: primary vs DoH', { primary, doh_v4 });
+      } else {
+        $('ipv4_note').textContent = '';
+      }
+    } else {
+      // no primary IPv4; use DoH if available
+      $('ipv4').textContent = doh_v4 || 'Unavailable';
+      $('ipv4_note').textContent = '';
+    }
+
+    // IPv6 display
+    if (primary && isIPv6(primary)) {
+      $('ipv6').textContent = primary;
+      if (doh_v6 && doh_v6 !== primary) {
+        $('ipv6_note').textContent = `(DoH: ${doh_v6})`;
+        logDebug('IPv6 mismatch: primary vs DoH', { primary, doh_v6 });
+      } else {
+        $('ipv6_note').textContent = '';
+      }
+    } else {
+      // no primary IPv6; use DoH if available
+      $('ipv6').textContent = doh_v6 || 'Unavailable';
+      $('ipv6_note').textContent = '';
+    }
+
+    // Dual-stack status (based on what we display as authoritative)
+    const displayedV4 = $('ipv4').textContent && $('ipv4').textContent !== 'Unavailable';
+    const displayedV6 = $('ipv6').textContent && $('ipv6').textContent !== 'Unavailable';
+    $('dualStack').textContent = displayedV4 && displayedV6 ? 'Dual‑stack (IPv4 + IPv6)' :
+                              displayedV4 ? 'IPv4 only' :
+                              displayedV6 ? 'IPv6 only' : 'No IP detected via DoH';
+
+    // IPv6 reachability (simple: DoH AAAA responses or primary IPv6)
+    $('ipv6Reach').textContent = (doh_v6 || (primary && isIPv6(primary))) ? 'Reachable' : 'Not reachable';
   }
 
   await ipDiagnostics();
