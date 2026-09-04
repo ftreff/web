@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hacker Info Dashboard</title>
+
+<style>
+    body {
+        background: #000;
+        color: #0f0;
+        font-family: Consolas, monospace;
+        padding: 20px;
+    }
+    h1 {
+        color: #0f0;
+        border-bottom: 1px solid #0f0;
+        padding-bottom: 10px;
+    }
+    .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #0f0;
+        background: #020;
+    }
+    .section h2 {
+        margin-top: 0;
+        color: #0f0;
+    }
+    .label {
+        color: #9f9;
+    }
+</style>
+</head>
+<body>
+
+<h1>HACKER ACCESS PANEL</h1>
+
+<div class="section">
+    <h2>IP & GEOLOCATION</h2>
+    <p><span class="label">IP Address:</span> <span id="ip"></span></p>
+    <p><span class="label">City:</span> <span id="city"></span></p>
+    <p><span class="label">Region:</span> <span id="region"></span></p>
+    <p><span class="label">Country:</span> <span id="country"></span></p>
+    <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
+    <p><span class="label">Latitude:</span> <span id="lat"></span></p>
+    <p><span class="label">Longitude:</span> <span id="lon"></span></p>
+    <p><span class="label">ISP:</span> <span id="org"></span></p>
+    <p><span class="label">ASN:</span> <span id="asn"></span></p>
+</div>
+
+<div class="section">
+    <h2>BROWSER & SYSTEM</h2>
+    <p><span class="label">Browser:</span> <span id="browser"></span></p>
+    <p><span class="label">Version:</span> <span id="version"></span></p>
+    <p><span class="label">Operating System:</span> <span id="os"></span></p>
+    <p><span class="label">Language:</span> <span id="lang"></span></p>
+    <p><span class="label">Timezone:</span> <span id="timezone"></span></p>
+    <p><span class="label">Touch Support:</span> <span id="touch"></span></p>
+</div>
+
+<div class="section">
+    <h2>HARDWARE</h2>
+    <p><span class="label">CPU Threads:</span> <span id="cpu"></span></p>
+    <p><span class="label">Memory (approx):</span> <span id="memory"></span> GB</p>
+    <p><span class="label">Battery Level:</span> <span id="battery"></span></p>
+    <p><span class="label">Charging:</span> <span id="charging"></span></p>
+</div>
+
+<div class="section">
+    <h2>NETWORK</h2>
+    <p><span class="label">Connection Type:</span> <span id="connection"></span></p>
+    <p><span class="label">Downlink Speed:</span> <span id="downlink"></span> Mbps</p>
+    <p><span class="label">Effective Latency:</span> <span id="rtt"></span> ms</p>
+</div>
+
+<div class="section">
+    <h2>DISPLAY</h2>
+    <p><span class="label">Screen Resolution:</span> <span id="resolution"></span></p>
+    <p><span class="label">Color Depth:</span> <span id="colorDepth"></span></p>
+</div>
+
+<div class="section">
+    <h2>FINGERPRINT</h2>
+    <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
+    <p><span class="label">Ad‑Block Detected:</span> <span id="adblock"></span></p>
+</div>
+
+<script>
+// ---------------- IP & GEO ----------------
+fetch("https://ipapi.co/json/")
+  .then(r => r.json())
+  .then(d => {
+    ip.textContent = d.ip;
+    city.textContent = d.city;
+    region.textContent = d.region;
+    country.textContent = d.country_name;
+    postal.textContent = d.postal;
+    lat.textContent = d.latitude;
+    lon.textContent = d.longitude;
+    org.textContent = d.org;
+    asn.textContent = d.asn;
+  });
+
+// ---------------- BROWSER & SYSTEM ----------------
+browser.textContent = navigator.userAgent.split(" ")[0];
+version.textContent = navigator.appVersion;
+os.textContent = navigator.platform;
+lang.textContent = navigator.language;
+timezone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+touch.textContent = navigator.maxTouchPoints > 0 ? "Yes" : "No";
+
+// ---------------- HARDWARE ----------------
+cpu.textContent = navigator.hardwareConcurrency;
+memory.textContent = navigator.deviceMemory || "Unknown";
+
+navigator.getBattery().then(b => {
+    battery.textContent = Math.round(b.level * 100) + "%";
+    charging.textContent = b.charging ? "Yes" : "No";
+});
+
+// ---------------- NETWORK ----------------
+const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+if (conn) {
+    connection.textContent = conn.effectiveType;
+    downlink.textContent = conn.downlink;
+    rtt.textContent = conn.rtt;
+} else {
+    connection.textContent = "Unknown";
+    downlink.textContent = "Unknown";
+    rtt.textContent = "Unknown";
+}
+
+// ---------------- DISPLAY ----------------
+resolution.textContent = `${screen.width} x ${screen.height}`;
+colorDepth.textContent = screen.colorDepth;
+
+// ---------------- CANVAS FINGERPRINT ----------------
+function canvasFingerprint() {
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.fillText("fingerprint_test_string", 2, 2);
+    return btoa(c.toDataURL());
+}
+fingerprint.textContent = canvasFingerprint();
+
+// ---------------- ADBLOCK DETECTION ----------------
+let ad = document.createElement('div');
+ad.innerHTML = "&nbsp;";
+ad.className = "adsbox";
+document.body.appendChild(ad);
+setTimeout(() => {
+    adblock.textContent = ad.offsetHeight === 0 ? "Yes" : "No";
+    ad.remove();
+}, 100);
+
+</script>
+
+</body>
+</html>
