@@ -11,16 +11,13 @@
         font-family: Consolas, monospace;
         padding: 20px;
     }
-    pre {
-        color: #0f0;
-        font-size: 12px;
-        line-height: 12px;
-    }
     .section {
         margin-bottom: 25px;
         padding: 15px;
         border: 1px solid #0f0;
         background: #020;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
     .section h2 {
         margin-top: 0;
@@ -29,39 +26,63 @@
     .label {
         color: #9f9;
     }
+
+    /* Visual Hash Block */
+    #hashBlock {
+        display: grid;
+        grid-template-columns: repeat(16, 10px);
+        grid-auto-rows: 10px;
+        gap: 2px;
+        margin-top: 10px;
+    }
+    .hashCell {
+        width: 10px;
+        height: 10px;
+        background: #0f0;
+        opacity: 0.15;
+    }
+
+    /* Map Box */
+    #mapBox {
+        margin-top: 15px;
+        border: 1px solid #0f0;
+        padding: 5px;
+        background: #001100;
+        text-align: center;
+    }
+    #mapImage {
+        width: 100%;
+        max-width: 350px;
+        border: 1px solid #0f0;
+    }
 </style>
 </head>
 <body>
 
-<!-- ASCII ART HEADER -->
-<pre>
-      .___.       .___.       .___.       .___.       .___.
-   ___|   |_______|   |_______|   |_______|   |_______|   |___
-  /   |   |   _   |   |   _   |   |   _   |   |   _   |   |   \
- /    |   |  |_|  |   |  |_|  |   |  |_|  |   |  |_|  |   |    \
-/_____|___|_______|___|_______|___|_______|___|_______|___|_____\
-\-----+---+-------+---+-------+---+-------+---+-------+---+-----/
- \    |   |  .-.  |   |  .-.  |   |  .-.  |   |  .-.  |   |    /
-  \   |   | (   ) |   | (   ) |   | (   ) |   | (   ) |   |   /
-   \__|___|__`-'__|___|__`-'__|___|__`-'__|___|__`-'__|___|__/
-      |   |   |   |   |   |   |   |   |   |   |   |   |   |
-      '---'   '---'   '---'   '---'   '---'   '---'   '---'
-      [ NETWORK MATRIX • SIGNAL ROUTING • DARKNET RELAYS ]
-</pre>
-
+<!-- IP BOX -->
 <div class="section">
-    <h2>IP & GEOLOCATION</h2>
+    <h2>IP INFORMATION</h2>
     <p><span class="label">IP Address:</span> <span id="ip"></span></p>
+    <p><span class="label">ISP:</span> <span id="org"></span></p>
+    <p><span class="label">ASN:</span> <span id="asn"></span></p>
+</div>
+
+<!-- GEOLOCATION BOX -->
+<div class="section">
+    <h2>GEOLOCATION</h2>
     <p><span class="label">City:</span> <span id="city"></span></p>
     <p><span class="label">Region:</span> <span id="region"></span></p>
     <p><span class="label">Country:</span> <span id="country"></span></p>
     <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
     <p><span class="label">Latitude:</span> <span id="lat"></span></p>
     <p><span class="label">Longitude:</span> <span id="lon"></span></p>
-    <p><span class="label">ISP:</span> <span id="org"></span></p>
-    <p><span class="label">ASN:</span> <span id="asn"></span></p>
+
+    <div id="mapBox">
+        <img id="mapImage" alt="Map loading...">
+    </div>
 </div>
 
+<!-- SECURITY -->
 <div class="section">
     <h2>SECURITY / THREAT</h2>
     <p><span class="label">VPN:</span> <span id="vpn"></span></p>
@@ -71,6 +92,7 @@
     <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
 </div>
 
+<!-- BROWSER & SYSTEM -->
 <div class="section">
     <h2>BROWSER & SYSTEM</h2>
     <p><span class="label">Browser:</span> <span id="browser"></span></p>
@@ -81,6 +103,7 @@
     <p><span class="label">Touch Support:</span> <span id="touch"></span></p>
 </div>
 
+<!-- HARDWARE -->
 <div class="section">
     <h2>HARDWARE</h2>
     <p><span class="label">CPU Threads:</span> <span id="cpu"></span></p>
@@ -89,6 +112,7 @@
     <p><span class="label">Charging:</span> <span id="charging"></span></p>
 </div>
 
+<!-- NETWORK -->
 <div class="section">
     <h2>NETWORK</h2>
     <p><span class="label">Connection Type:</span> <span id="connection"></span></p>
@@ -96,42 +120,53 @@
     <p><span class="label">Effective Latency:</span> <span id="rtt"></span> ms</p>
 </div>
 
+<!-- DISPLAY -->
 <div class="section">
     <h2>DISPLAY</h2>
     <p><span class="label">Screen Resolution:</span> <span id="resolution"></span></p>
     <p><span class="label">Color Depth:</span> <span id="colorDepth"></span></p>
 </div>
 
+<!-- FINGERPRINT -->
 <div class="section">
     <h2>FINGERPRINT</h2>
     <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
-    <p><span class="label">Ad‑Block Detected:</span> <span id="adblock"></span></p>
+
+    <div id="hashBlock"></div>
 </div>
 
 <script>
-// ---------------- IP + GEO + SECURITY ----------------
+// IP + GEO + SECURITY
 fetch("https://ipapi.co/json/")
   .then(r => r.json())
   .then(d => {
     ip.textContent = d.ip;
+    org.textContent = d.org;
+    asn.textContent = d.asn;
+
     city.textContent = d.city;
     region.textContent = d.region;
     country.textContent = d.country_name;
     postal.textContent = d.postal;
     lat.textContent = d.latitude;
     lon.textContent = d.longitude;
-    org.textContent = d.org;
-    asn.textContent = d.asn;
 
-    // Security fields
     vpn.textContent = d.security?.vpn ? "Yes" : "No";
     tor.textContent = d.security?.tor ? "Yes" : "No";
     proxy.textContent = d.security?.proxy ? "Yes" : "No";
     relay.textContent = d.security?.relay ? "Yes" : "No";
     threat.textContent = d.security?.threat_score ?? "Unknown";
+
+    // MAP TILE
+    const mapLat = d.latitude;
+    const mapLon = d.longitude;
+
+    const mapURL = `https://tile.openstreetmap.org/15/${Math.floor((mapLon + 180) * 2**15 / 360)}/${Math.floor((1 - Math.log(Math.tan(mapLat * Math.PI/180) + 1 / Math.cos(mapLat * Math.PI/180)) / Math.PI) * 2**14)}.png`;
+
+    document.getElementById("mapImage").src = mapURL;
   });
 
-// ---------------- BROWSER & SYSTEM ----------------
+// BROWSER & SYSTEM
 browser.textContent = navigator.userAgent.split(" ")[0];
 version.textContent = navigator.appVersion;
 os.textContent = navigator.platform;
@@ -139,7 +174,7 @@ lang.textContent = navigator.language;
 timezone.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
 touch.textContent = navigator.maxTouchPoints > 0 ? "Yes" : "No";
 
-// ---------------- HARDWARE ----------------
+// HARDWARE
 cpu.textContent = navigator.hardwareConcurrency;
 memory.textContent = navigator.deviceMemory || "Unknown";
 
@@ -148,7 +183,7 @@ navigator.getBattery().then(b => {
     charging.textContent = b.charging ? "Yes" : "No";
 });
 
-// ---------------- NETWORK ----------------
+// NETWORK
 const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 if (conn) {
     connection.textContent = conn.effectiveType;
@@ -160,11 +195,11 @@ if (conn) {
     rtt.textContent = "Unknown";
 }
 
-// ---------------- DISPLAY ----------------
+// DISPLAY
 resolution.textContent = `${screen.width} x ${screen.height}`;
 colorDepth.textContent = screen.colorDepth;
 
-// ---------------- CANVAS FINGERPRINT ----------------
+// CANVAS FINGERPRINT
 function canvasFingerprint() {
     const c = document.createElement("canvas");
     const ctx = c.getContext("2d");
@@ -173,9 +208,30 @@ function canvasFingerprint() {
     ctx.fillText("fingerprint_test_string", 2, 2);
     return btoa(c.toDataURL());
 }
-fingerprint.textContent = canvasFingerprint();
 
-// ---------------- ADBLOCK DETECTION ----------------
+const fp = canvasFingerprint();
+fingerprint.textContent = fp;
+
+// VISUAL HASH BLOCK
+function renderHashBlock(hash) {
+    const block = document.getElementById("hashBlock");
+    block.innerHTML = "";
+
+    for (let i = 0; i < 256; i++) {
+        const cell = document.createElement("div");
+        cell.className = "hashCell";
+
+        const val = hash.charCodeAt(i % hash.length);
+        const brightness = (val % 100) / 100;
+
+        cell.style.opacity = brightness;
+        block.appendChild(cell);
+    }
+}
+
+renderHashBlock(fp);
+
+// ADBLOCK DETECTION
 let ad = document.createElement('div');
 ad.innerHTML = "&nbsp;";
 ad.className = "adsbox";
@@ -184,7 +240,6 @@ setTimeout(() => {
     adblock.textContent = ad.offsetHeight === 0 ? "Yes" : "No";
     ad.remove();
 }, 100);
-
 </script>
 
 </body>
