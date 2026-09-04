@@ -68,9 +68,8 @@
 <div class="section">
     <h2>SECURITY / THREAT</h2>
     <p><span class="label">VPN:</span> <span id="vpn"></span></p>
-    <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
     <p><span class="label">Proxy:</span> <span id="proxy"></span></p>
-    <p><span class="label">Relay:</span> <span id="relay"></span></p>
+    <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
     <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
 </div>
 
@@ -118,26 +117,36 @@
 </div>
 
 <script>
-// IP + GEO + SECURITY
-fetch("https://ipapi.co/json/")
+// IP + GEO + SECURITY (NEW API)
+fetch("https://ipwho.is/")
   .then(r => r.json())
   .then(d => {
-    ip.textContent = d.ip || "Unavailable";
-    org.textContent = d.org || "Unavailable";
-    asn.textContent = d.asn || "Unavailable";
 
-    city.textContent = d.city || "Unavailable";
-    region.textContent = d.region || "Unavailable";
-    country.textContent = d.country_name || "Unavailable";
+    // IP BOX
+    ip.textContent = d.ip;
+    org.textContent = d.connection?.isp || "Unavailable";
+    asn.textContent = d.connection?.asn || "Unavailable";
+
+    // GEO BOX
+    city.textContent = d.city;
+    region.textContent = d.region;
+    country.textContent = d.country;
     postal.textContent = d.postal || "Unavailable";
-    lat.textContent = d.latitude || "Unavailable";
-    lon.textContent = d.longitude || "Unavailable";
+    lat.textContent = d.latitude;
+    lon.textContent = d.longitude;
 
+    // SECURITY BOX
     vpn.textContent = d.security?.vpn ? "Yes" : "No";
-    tor.textContent = d.security?.tor ? "Yes" : "No";
     proxy.textContent = d.security?.proxy ? "Yes" : "No";
-    relay.textContent = d.security?.relay ? "Yes" : "No";
-    threat.textContent = d.security?.threat_score ?? "Unknown";
+    tor.textContent = d.security?.tor ? "Yes" : "No";
+
+    // Simple threat score
+    let score = 0;
+    if (d.security?.vpn) score += 30;
+    if (d.security?.proxy) score += 20;
+    if (d.security?.tor) score += 50;
+
+    threat.textContent = score;
   });
 
 // BROWSER & SYSTEM
@@ -204,16 +213,6 @@ function renderHashBlock(hash) {
 }
 
 renderHashBlock(fp);
-
-// ADBLOCK DETECTION
-let ad = document.createElement('div');
-ad.innerHTML = "&nbsp;";
-ad.className = "adsbox";
-document.body.appendChild(ad);
-setTimeout(() => {
-    adblock.textContent = ad.offsetHeight === 0 ? "Yes" : "No";
-    ad.remove();
-}, 100);
 </script>
 
 </body>
