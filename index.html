@@ -14,6 +14,21 @@
   #debug { color:#ff6; font-size:12px; display:none; white-space:pre-wrap; margin-top:10px; border-top:1px dashed #444; padding-top:10px; }
   #debugToggle { background:#022; color:#9f9; border:1px solid #0f0; padding:6px 10px; cursor:pointer; margin-bottom:12px; }
   .small { font-size:12px; color:#9f9; }
+
+  /* Footer under fingerprint */
+  #footerBar {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 12px;
+    margin-top:8px;
+    background:transparent;
+    color:#9f9;
+    border-top:1px solid rgba(15,255,15,0.06);
+    font-size:13px;
+  }
+  #footerLeft { text-align:left; }
+  #footerRight { text-align:right; }
 </style>
 </head>
 <body>
@@ -26,15 +41,11 @@
 
   <p><span class="label">Public IP (primary):</span> <span id="publicIp"></span></p>
 
-  <p><span class="label">IPv4 [Google]:</span> <span id="ipv4_google"></span></p>
-  <p><span class="label">IPv4 [Cloudflare]:</span> <span id="ipv4_cloudflare"></span></p>
-
-  <p><span class="label">IPv6 [Google]:</span> <span id="ipv6_google"></span></p>
-  <p><span class="label">IPv6 [Cloudflare]:</span> <span id="ipv6_cloudflare"></span></p>
+  <p><span class="label">IPv4:</span> <span id="ipv4"></span></p>
+  <p><span class="label">IPv6:</span> <span id="ipv6"></span></p>
 
   <p><span class="label">Dual‑Stack Status:</span> <span id="dualStack"></span></p>
   <p><span class="label">IPv6 Reachability:</span> <span id="ipv6Reach"></span></p>
-  <p><span class="label">IPv6 Privacy Extensions:</span> <span id="ipv6Privacy"></span></p>
 
   <p><span class="label">Hostname:</span> <span id="hostname"></span></p>
   <p><span class="label">Reverse DNS (PTR):</span> <span id="ptr"></span></p>
@@ -54,15 +65,6 @@
   <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
   <p><span class="label">Latitude:</span> <span id="lat"></span></p>
   <p><span class="label">Longitude:</span> <span id="lon"></span></p>
-</div>
-
-<!-- SECURITY -->
-<div class="section">
-  <h2>SECURITY / THREAT</h2>
-  <p><span class="label">VPN:</span> <span id="vpn"></span></p>
-  <p><span class="label">Proxy:</span> <span id="proxy"></span></p>
-  <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
-  <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
 </div>
 
 <!-- DNS DIAGNOSTICS -->
@@ -118,13 +120,19 @@
   <h2>FINGERPRINT</h2>
   <div id="hashBlock"></div>
   <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
+
+  <!-- Footer bar under fingerprint: left = timestamp (load time), right = version -->
+  <div id="footerBar" aria-hidden="false">
+    <div id="footerLeft">—</div>
+    <div id="footerRight">v1.0</div>
+  </div>
 </div>
 
 <!-- hidden debug output -->
 <pre id="debug"></pre>
 
 <script>
-/* ---------- Small helpers ---------- */
+/* ---------- Helpers ---------- */
 const $ = id => document.getElementById(id);
 function logDebug(...args){
   try { console.debug(...args); } catch(e){}
@@ -135,16 +143,13 @@ function isIPv6(ip){ return !!ip && ip.includes(':'); }
 
 /* Expand IPv6 to full nibble reverse for PTR */
 function ipv6ToArpa(ipv6){
-  // Normalize: remove zone id if present (e.g., %eth0)
   ipv6 = ipv6.split('%')[0];
-  // Expand :: to full 8 hextets
   const parts = ipv6.split('::');
   let left = parts[0] ? parts[0].split(':').filter(Boolean) : [];
   let right = parts[1] ? parts[1].split(':').filter(Boolean) : [];
   const missing = 8 - (left.length + right.length);
   const zeros = new Array(missing).fill('0');
   const full = [...left, ...zeros, ...right].map(h => h.padStart(4,'0')).join('');
-  // Reverse nibbles
   const nibbles = full.split('').reverse().join('.');
   return nibbles + '.ip6.arpa';
 }
@@ -154,46 +159,20 @@ function ipv4ToArpa(ipv4){
   return ipv4.split('.').reverse().join('.') + '.in-addr.arpa';
 }
 
-/* DoH helper that returns status and JSON (detects CORS/network) */
-async function dohResolveWithStatus(endpoint, name, type){
-  // returns { ok: boolean, reason: string, json: object|null, status: number|null }
+/* Simple DoH JSON fetch for Google (returns parsed JSON or null) */
+async function dohGoogle(name, type){
   try {
-    const headers = endpoint.includes('cloudflare') ? { 'accept':'application/dns-json' } : {};
-    const url = `${endpoint}?name=${encodeURIComponent(name)}&type=${type}`;
-    const res = await fetch(url, { headers, mode: 'cors' });
-    if (!res.ok) {
-      return { ok: false, reason: 'http-error', status: res.status, json: null };
-    }
-    const json = await res.json();
-    if (json && json.Answer && json.Answer.length) {
-      return { ok: true, reason: 'answer', status: res.status, json };
-    } else {
-      return { ok: false, reason: 'no-answer', status: res.status, json };
-    }
-  } catch (err) {
-    const msg = String(err || '');
-    if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-      // Probe HEAD to try to distinguish CORS vs network
-      try {
-        await fetch(endpoint, { method: 'HEAD', mode: 'cors' });
-        return { ok: false, reason: 'cors-blocked', status: null, json: null };
-      } catch (probeErr) {
-        return { ok: false, reason: 'network-error', status: null, json: null };
-      }
-    }
-    return { ok: false, reason: 'network-error', status: null, json: null };
+    const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=${type}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e){
+    logDebug('dohGoogle error', e);
+    return null;
   }
 }
 
-/* DoH JSON fetch wrapper */
-async function dohResolveJson(endpoint, name, type){
-  const r = await dohResolveWithStatus(endpoint, name, type);
-  return r;
-}
-
-/* ---------- Robust IP + Geo fetch with fallbacks ---------- */
+/* ---------- IP + Geo with fallbacks ---------- */
 async function fetchPublicIpAndGeo(){
-  // Try ipwho.is first (gives geo + security)
   try {
     const r = await fetch('https://ipwho.is/');
     if (r.ok){
@@ -205,7 +184,6 @@ async function fetchPublicIpAndGeo(){
     }
   } catch(e){ logDebug('ipwho.is failed', e); }
 
-  // Fallback 1: ipify
   try {
     const r = await fetch('https://api.ipify.org?format=json');
     if (r.ok){
@@ -217,7 +195,6 @@ async function fetchPublicIpAndGeo(){
     }
   } catch(e){ logDebug('ipify failed', e); }
 
-  // Fallback 2: Cloudflare trace
   try {
     const r = await fetch('https://1.1.1.1/cdn-cgi/trace');
     if (r.ok){
@@ -234,7 +211,6 @@ async function fetchPublicIpAndGeo(){
     }
   } catch(e){ logDebug('cloudflare trace failed', e); }
 
-  // Fallback 3: ifconfig.co
   try {
     const r = await fetch('https://ifconfig.co/json');
     if (r.ok){
@@ -248,22 +224,6 @@ async function fetchPublicIpAndGeo(){
 
   logDebug('All IP providers failed');
   return { source:null, data:null };
-}
-
-/* ---------- TorProject check (best-effort) ---------- */
-async function checkTorProject(){
-  try {
-    const r = await fetch('https://check.torproject.org/api/ip');
-    if (!r.ok) return { ok:false, reason:'http-error', status:r.status };
-    const j = await r.json();
-    // TorProject returns {"IsTor":true,...} or similar
-    const isTor = j.IsTor || j.is_tor || j.is_tor_exit || false;
-    return { ok:true, isTor, raw:j };
-  } catch (err) {
-    const msg = String(err || '');
-    if (msg.includes('Failed to fetch')) return { ok:false, reason:'cors-or-network' };
-    return { ok:false, reason:'network-error' };
-  }
 }
 
 /* ---------- Main init ---------- */
@@ -329,6 +289,14 @@ async function checkTorProject(){
     }
   })(fp);
 
+  // Footer: timestamp of when page loaded (single snapshot)
+  (function setFooterTimestamp(){
+    const now = new Date();
+    const pad = n => String(n).padStart(2,'0');
+    const formatted = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    $('footerLeft').textContent = formatted;
+  })();
+
   // Fetch public IP + geo with fallbacks
   const ipResult = await fetchPublicIpAndGeo();
   if (!ipResult || !ipResult.data){
@@ -337,7 +305,6 @@ async function checkTorProject(){
   } else {
     const src = ipResult.source;
     const data = ipResult.data;
-    // normalize ip field
     let publicIp = data.ip || data.IP || data.ipv4 || data.client_ip || data['ip'] || null;
     if (!publicIp && data.ip) publicIp = data.ip;
     $('publicIp').textContent = publicIp || 'Unavailable';
@@ -354,19 +321,11 @@ async function checkTorProject(){
         $('lat').textContent = data.latitude || 'Unavailable';
         $('lon').textContent = data.longitude || 'Unavailable';
         if (data.flag?.img) $('flag').src = data.flag.img;
-        $('vpn').textContent = data.security?.vpn ? 'Yes' : 'No';
-        $('proxy').textContent = data.security?.proxy ? 'Yes' : 'No';
-        $('tor').textContent = data.security?.tor ? 'Yes' : 'No';
         let score = 100;
         if (data.security?.vpn) score -= 30;
         if (data.security?.proxy) score -= 20;
         if (data.security?.tor) score -= 50;
         $('reputation').textContent = score;
-        let threat = 0;
-        if (data.security?.vpn) threat += 30;
-        if (data.security?.proxy) threat += 20;
-        if (data.security?.tor) threat += 50;
-        $('threat').textContent = threat;
       } catch(e){
         logDebug('Error populating ipwho.is fields', e);
       }
@@ -382,11 +341,7 @@ async function checkTorProject(){
       $('lat').textContent = '';
       $('lon').textContent = '';
       $('flag').src = '';
-      $('vpn').textContent = 'Unknown';
-      $('proxy').textContent = 'Unknown';
-      $('tor').textContent = 'Unknown';
       $('reputation').textContent = 'Unknown';
-      $('threat').textContent = 'Unknown';
     }
 
     // PTR lookup for IPv4 or IPv6
@@ -394,8 +349,8 @@ async function checkTorProject(){
       if (isIPv6(publicIp)){
         try {
           const arpa = ipv6ToArpa(publicIp);
-          const res = await dohResolveJson('https://dns.google/resolve', arpa, 'PTR');
-          const ans = res && res.json && res.json.Answer && res.json.Answer.find(a => a.type === 12);
+          const res = await dohGoogle(arpa, 'PTR');
+          const ans = res && res.Answer && res.Answer.find(a => a.type === 12);
           $('ptr').textContent = ans ? ans.data : 'Unavailable';
         } catch(e){
           logDebug('IPv6 PTR failed', e);
@@ -404,8 +359,8 @@ async function checkTorProject(){
       } else {
         try {
           const arpa = ipv4ToArpa(publicIp);
-          const res = await dohResolveJson('https://dns.google/resolve', arpa, 'PTR');
-          const ans = res && res.json && res.json.Answer && res.json.Answer.find(a => a.type === 12);
+          const res = await dohGoogle(arpa, 'PTR');
+          const ans = res && res.Answer && res.Answer.find(a => a.type === 12);
           $('ptr').textContent = ans ? ans.data : 'Unavailable';
         } catch(e){
           logDebug('IPv4 PTR failed', e);
@@ -417,113 +372,50 @@ async function checkTorProject(){
     }
   } // end ipResult handling
 
-  /* ---------- IPv4/IPv6 diagnostics via DoH (Google + Cloudflare) ---------- */
+  /* ---------- IPv4/IPv6 diagnostics via Google DoH (single-resolver) ---------- */
   async function ipDiagnostics(){
-    let v4g=null, v4c=null, v6g=null, v6c=null;
+    let v4=null, v6=null;
 
     // IPv4 via Google TXT
     try {
-      const g4 = await dohResolveJson('https://dns.google/resolve', 'o-o.myaddr.l.google.com', 'TXT');
-      if (g4 && g4.ok && g4.json && g4.json.Answer){
-        const txt = g4.json.Answer.map(a => a.data).join(' ');
-        v4g = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
+      const g4 = await dohGoogle('o-o.myaddr.l.google.com', 'TXT');
+      if (g4 && g4.Answer && g4.Answer.length){
+        const txt = g4.Answer.map(a => a.data).join(' ');
+        v4 = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
       }
-      $('ipv4_google').textContent = v4g || 'Unavailable';
+      $('ipv4').textContent = v4 || 'Unavailable';
       logDebug('Google IPv4 TXT', g4);
     } catch(e){
       logDebug('IPv4 Google TXT failed', e);
-      $('ipv4_google').textContent = 'Unavailable';
-    }
-
-    // IPv4 via Cloudflare (robust)
-    try {
-      const cf4 = await dohResolveWithStatus('https://cloudflare-dns.com/dns-query', 'whoami.cloudflare', 'TXT');
-      logDebug('Cloudflare IPv4 raw', cf4);
-      if (cf4.ok && cf4.json && cf4.json.Answer){
-        const txt = cf4.json.Answer.map(a => a.data).join(' ');
-        v4c = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
-        $('ipv4_cloudflare').textContent = v4c || 'Unavailable';
-      } else {
-        if (cf4.reason === 'cors-blocked') $('ipv4_cloudflare').textContent = 'Blocked by CORS';
-        else if (cf4.reason === 'network-error') $('ipv4_cloudflare').textContent = 'Network error';
-        else if (cf4.reason === 'http-error') $('ipv4_cloudflare').textContent = `HTTP ${cf4.status}`;
-        else $('ipv4_cloudflare').textContent = 'No answer';
-      }
-    } catch(e){
-      logDebug('Cloudflare IPv4 check failed', e);
-      $('ipv4_cloudflare').textContent = 'Unavailable';
+      $('ipv4').textContent = 'Unavailable';
     }
 
     // IPv6 via Google (AAAA)
     try {
-      const g6 = await dohResolveJson('https://dns.google/resolve', 'ipv6.google.com', 'AAAA');
+      const g6 = await dohGoogle('ipv6.google.com', 'AAAA');
       logDebug('Google IPv6 raw', g6);
-      if (g6 && g6.ok && g6.json && g6.json.Answer){
-        const aaa = g6.json.Answer.find(a => a.type === 28) || g6.json.Answer[g6.json.Answer.length-1];
-        v6g = aaa && aaa.data ? aaa.data : null;
+      if (g6 && g6.Answer && g6.Answer.length){
+        const aaa = g6.Answer.find(a => a.type === 28) || g6.Answer[g6.Answer.length-1];
+        v6 = aaa && aaa.data ? aaa.data : null;
       }
-      $('ipv6_google').textContent = v6g || 'Unavailable';
+      $('ipv6').textContent = v6 || 'Unavailable';
     } catch(e){
       logDebug('IPv6 Google AAAA failed', e);
-      $('ipv6_google').textContent = 'Unavailable';
-    }
-
-    // IPv6 via Cloudflare (robust)
-    try {
-      const cf6 = await dohResolveWithStatus('https://cloudflare-dns.com/dns-query', 'ipv6.cloudflare.com', 'AAAA');
-      logDebug('Cloudflare IPv6 raw', cf6);
-      if (cf6.ok && cf6.json && cf6.json.Answer){
-        const aaa = cf6.json.Answer.find(a => a.type === 28) || cf6.json.Answer[cf6.json.Answer.length-1];
-        v6c = aaa && aaa.data ? aaa.data : null;
-        $('ipv6_cloudflare').textContent = v6c || 'Unavailable';
-      } else {
-        if (cf6.reason === 'cors-blocked') $('ipv6_cloudflare').textContent = 'Blocked by CORS';
-        else if (cf6.reason === 'network-error') $('ipv6_cloudflare').textContent = 'Network error';
-        else if (cf6.reason === 'http-error') $('ipv6_cloudflare').textContent = `HTTP ${cf6.status}`;
-        else $('ipv6_cloudflare').textContent = 'No answer';
-      }
-    } catch(e){
-      logDebug('Cloudflare IPv6 check failed', e);
-      $('ipv6_cloudflare').textContent = 'Unavailable';
+      $('ipv6').textContent = 'Unavailable';
     }
 
     // Dual-stack status
-    const hasV4 = !!(v4g || v4c);
-    const hasV6 = !!(v6g || v6c);
+    const hasV4 = !!v4;
+    const hasV6 = !!v6;
     $('dualStack').textContent = hasV4 && hasV6 ? 'Dual‑stack (IPv4 + IPv6)' :
                               hasV4 ? 'IPv4 only' :
                               hasV6 ? 'IPv6 only' : 'No IP detected via DoH';
 
     // IPv6 reachability (simple: DoH AAAA responses)
     $('ipv6Reach').textContent = hasV6 ? 'Reachable' : 'Not reachable';
-
-    // IPv6 privacy extension detection
-    if (v6g && v6c){
-      $('ipv6Privacy').textContent = v6g !== v6c ? 'Likely enabled (different IPv6 per resolver)' :
-                                              'Likely disabled (same IPv6 per resolver)';
-    } else if (hasV6){
-      $('ipv6Privacy').textContent = 'Unknown (only one resolver reports IPv6)';
-    } else {
-      $('ipv6Privacy').textContent = 'Unavailable (no IPv6)';
-    }
   }
 
   await ipDiagnostics();
-
-  /* ---------- Tor detection enhancement ---------- */
-  try {
-    const torRes = await checkTorProject();
-    logDebug('TorProject check', torRes);
-    if (torRes.ok) {
-      $('tor').textContent = torRes.isTor ? 'Yes' : 'No';
-    } else {
-      // keep existing ipwho.is value if present; otherwise mark Unknown
-      if (!$('tor').textContent || $('tor').textContent === 'Unknown') $('tor').textContent = 'Unknown';
-      logDebug('TorProject API unavailable:', torRes.reason || 'unknown');
-    }
-  } catch(e){
-    logDebug('TorProject check failed', e);
-  }
 
   /* ---------- DNS diagnostics (DoH) ---------- */
   (function runDnsDiagnostics(){
