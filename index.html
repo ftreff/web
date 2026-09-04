@@ -15,7 +15,7 @@
   #debugToggle { background:#022; color:#9f9; border:1px solid #0f0; padding:6px 10px; cursor:pointer; margin-bottom:12px; }
   .small { font-size:12px; color:#9f9; }
 
-  /* Footer under fingerprint */
+  /* Footer under fingerprint (outside the green box) */
   #footerBar {
     display:flex;
     justify-content:space-between;
@@ -120,12 +120,12 @@
   <h2>FINGERPRINT</h2>
   <div id="hashBlock"></div>
   <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
+</div>
 
-  <!-- Footer bar under fingerprint: left = timestamp (load time), right = version -->
-  <div id="footerBar" aria-hidden="false">
-    <div id="footerLeft">—</div>
-    <div id="footerRight">v1.0</div>
-  </div>
+<!-- Footer placed outside the FINGERPRINT box -->
+<div id="footerBar" aria-hidden="false">
+  <div id="footerLeft">—</div>
+  <div id="footerRight">v2.7.1</div>
 </div>
 
 <!-- hidden debug output -->
@@ -229,7 +229,7 @@ async function fetchPublicIpAndGeo(){
 /* ---------- Main init ---------- */
 (async function init(){
   // debug toggle
-  const dbgToggle = $('debugToggle');
+  const dbgToggle = document.getElementById('debugToggle');
   dbgToggle.addEventListener('click', () => {
     const dbg = $('debug');
     dbg.style.display = dbg.style.display === 'block' ? 'none' : 'block';
