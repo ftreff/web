@@ -1,351 +1,495 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>FAT Warez Network Dashboard</title>
-
+<meta charset="utf-8" />
+<title>FAT Warez</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-    body {
-        background: #000;
-        color: #0f0;
-        font-family: Consolas, monospace;
-        padding: 20px;
-    }
-    .section {
-        margin-bottom: 25px;
-        padding: 15px;
-        border: 1px solid #0f0;
-        background: #020;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-    }
-    .section h2 {
-        margin-top: 0;
-        color: #0f0;
-    }
-    .label {
-        color: #9f9;
-    }
-    #hashBlock {
-        display: grid;
-        grid-template-columns: repeat(16, 10px);
-        grid-auto-rows: 10px;
-        gap: 2px;
-        margin-bottom: 10px;
-    }
-    .hashCell {
-        width: 10px;
-        height: 10px;
-        background: #0f0;
-        opacity: 0.15;
-    }
+  body { background:#000; color:#0f0; font-family:Consolas,monospace; padding:18px; }
+  .section { margin-bottom:20px; padding:14px; border:1px solid #0f0; background:#020; word-wrap:break-word; }
+  .section h2 { margin-top:0; color:#0f0; }
+  .label { color:#9f9; }
+  #hashBlock { display:grid; grid-template-columns:repeat(16,10px); grid-auto-rows:10px; gap:2px; margin-bottom:10px; }
+  .hashCell { width:10px; height:10px; background:#0f0; opacity:0.15; }
+  /* small debug area (hidden by default) */
+  #debug { color:#ff6; font-size:12px; display:none; white-space:pre-wrap; margin-top:10px; }
 </style>
 </head>
 <body>
 
 <!-- IP BOX -->
 <div class="section">
-    <h2>IP INFORMATION</h2>
+  <h2>IP INFORMATION</h2>
 
-    <p><span class="label">Public IP (ipwho.is):</span> <span id="publicIp"></span></p>
+  <p><span class="label">Public IP (primary):</span> <span id="publicIp"></span></p>
 
-    <p><span class="label">IPv4 [Google]:</span> <span id="ipv4_google"></span></p>
-    <p><span class="label">IPv4 [Cloudflare]:</span> <span id="ipv4_cloudflare"></span></p>
+  <p><span class="label">IPv4 [Google]:</span> <span id="ipv4_google"></span></p>
+  <p><span class="label">IPv4 [Cloudflare]:</span> <span id="ipv4_cloudflare"></span></p>
 
-    <p><span class="label">IPv6 [Google]:</span> <span id="ipv6_google"></span></p>
-    <p><span class="label">IPv6 [Cloudflare]:</span> <span id="ipv6_cloudflare"></span></p>
+  <p><span class="label">IPv6 [Google]:</span> <span id="ipv6_google"></span></p>
+  <p><span class="label">IPv6 [Cloudflare]:</span> <span id="ipv6_cloudflare"></span></p>
 
-    <p><span class="label">Dual‑Stack Status:</span> <span id="dualStack"></span></p>
-    <p><span class="label">IPv6 Reachability:</span> <span id="ipv6Reach"></span></p>
-    <p><span class="label">IPv6 Privacy Extensions:</span> <span id="ipv6Privacy"></span></p>
+  <p><span class="label">Dual‑Stack Status:</span> <span id="dualStack"></span></p>
+  <p><span class="label">IPv6 Reachability:</span> <span id="ipv6Reach"></span></p>
+  <p><span class="label">IPv6 Privacy Extensions:</span> <span id="ipv6Privacy"></span></p>
 
-    <p><span class="label">Hostname:</span> <span id="hostname"></span></p>
-    <p><span class="label">Reverse DNS (PTR):</span> <span id="ptr"></span></p>
-    <p><span class="label">IP Reputation:</span> <span id="reputation"></span></p>
+  <p><span class="label">Hostname:</span> <span id="hostname"></span></p>
+  <p><span class="label">Reverse DNS (PTR):</span> <span id="ptr"></span></p>
+  <p><span class="label">IP Reputation:</span> <span id="reputation"></span></p>
 
-    <p><span class="label">ISP:</span> <span id="org"></span></p>
-    <p><span class="label">ASN:</span> <span id="asn"></span></p>
+  <p><span class="label">ISP:</span> <span id="org"></span></p>
+  <p><span class="label">ASN:</span> <span id="asn"></span></p>
 </div>
 
 <!-- GEOLOCATION BOX -->
 <div class="section">
-    <h2>GEOLOCATION</h2>
-    <p><span class="label">City:</span> <span id="city"></span></p>
-    <p><span class="label">Region:</span> <span id="region"></span></p>
-    <p><span class="label">Country:</span> <span id="country"></span></p>
-    <p><span class="label">Flag:</span> <img id="flag" style="height:20px;vertical-align:middle;"></p>
-    <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
-    <p><span class="label">Latitude:</span> <span id="lat"></span></p>
-    <p><span class="label">Longitude:</span> <span id="lon"></span></p>
+  <h2>GEOLOCATION</h2>
+  <p><span class="label">City:</span> <span id="city"></span></p>
+  <p><span class="label">Region:</span> <span id="region"></span></p>
+  <p><span class="label">Country:</span> <span id="country"></span></p>
+  <p><span class="label">Flag:</span> <img id="flag" style="height:20px;vertical-align:middle;"></p>
+  <p><span class="label">Postal Code:</span> <span id="postal"></span></p>
+  <p><span class="label">Latitude:</span> <span id="lat"></span></p>
+  <p><span class="label">Longitude:</span> <span id="lon"></span></p>
 </div>
 
 <!-- SECURITY -->
 <div class="section">
-    <h2>SECURITY / THREAT</h2>
-    <p><span class="label">VPN:</span> <span id="vpn"></span></p>
-    <p><span class="label">Proxy:</span> <span id="proxy"></span></p>
-    <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
-    <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
+  <h2>SECURITY / THREAT</h2>
+  <p><span class="label">VPN:</span> <span id="vpn"></span></p>
+  <p><span class="label">Proxy:</span> <span id="proxy"></span></p>
+  <p><span class="label">Tor Exit Node:</span> <span id="tor"></span></p>
+  <p><span class="label">Threat Score:</span> <span id="threat"></span></p>
 </div>
 
 <!-- DNS DIAGNOSTICS -->
 <div class="section">
-    <h2>DNS DIAGNOSTICS</h2>
-    <p><span class="label">Resolver (DoH):</span> <span id="dnsResolver"></span></p>
-    <p><span class="label">DNS Protocol:</span> <span id="dnsProtocol"></span></p>
-    <p><span class="label">DNS Leak Test:</span> <span id="dnsLeak"></span></p>
-    <p><span class="label">DNSSEC Support:</span> <span id="dnssec"></span></p>
-    <p><span class="label">NXDOMAIN Behavior:</span> <span id="nxdomain"></span></p>
-    <p><span class="label">EDNS Client Subnet:</span> <span id="ecs"></span></p>
-    <p><span class="label">Resolver Country:</span> <span id="resolverCountry"></span></p>
-    <p><span class="label">Resolver ASN:</span> <span id="resolverAsn"></span></p>
+  <h2>DNS DIAGNOSTICS</h2>
+  <p><span class="label">Resolver (DoH):</span> <span id="dnsResolver"></span></p>
+  <p><span class="label">DNS Protocol:</span> <span id="dnsProtocol"></span></p>
+  <p><span class="label">DNS Leak Test:</span> <span id="dnsLeak"></span></p>
+  <p><span class="label">DNSSEC Support:</span> <span id="dnssec"></span></p>
+  <p><span class="label">NXDOMAIN Behavior:</span> <span id="nxdomain"></span></p>
+  <p><span class="label">EDNS Client Subnet:</span> <span id="ecs"></span></p>
+  <p><span class="label">Resolver Country:</span> <span id="resolverCountry"></span></p>
+  <p><span class="label">Resolver ASN:</span> <span id="resolverAsn"></span></p>
 </div>
 
 <!-- BROWSER & SYSTEM -->
 <div class="section">
-    <h2>BROWSER & SYSTEM</h2>
-    <p><span class="label">Browser:</span> <span id="browser"></span></p>
-    <p><span class="label">Version:</span> <span id="version"></span></p>
-    <p><span class="label">Operating System:</span> <span id="os"></span></p>
-    <p><span class="label">Language:</span> <span id="lang"></span></p>
-    <p><span class="label">Timezone:</span> <span id="timezone"></span></p>
-    <p><span class="label">Touch Support:</span> <span id="touch"></span></p>
+  <h2>BROWSER & SYSTEM</h2>
+  <p><span class="label">Browser:</span> <span id="browser"></span></p>
+  <p><span class="label">Version:</span> <span id="version"></span></p>
+  <p><span class="label">Operating System:</span> <span id="os"></span></p>
+  <p><span class="label">Language:</span> <span id="lang"></span></p>
+  <p><span class="label">Timezone:</span> <span id="timezone"></span></p>
+  <p><span class="label">Touch Support:</span> <span id="touch"></span></p>
 </div>
 
 <!-- HARDWARE -->
 <div class="section">
-    <h2>HARDWARE</h2>
-    <p><span class="label">CPU Threads:</span> <span id="cpu"></span></p>
-    <p><span class="label">Memory (approx):</span> <span id="memory"></span> GB</p>
-    <p><span class="label">Battery Level:</span> <span id="battery"></span></p>
-    <p><span class="label">Charging:</span> <span id="charging"></span></p>
+  <h2>HARDWARE</h2>
+  <p><span class="label">CPU Threads:</span> <span id="cpu"></span></p>
+  <p><span class="label">Memory (approx):</span> <span id="memory"></span> GB</p>
+  <p><span class="label">Battery Level:</span> <span id="battery"></span></p>
+  <p><span class="label">Charging:</span> <span id="charging"></span></p>
 </div>
 
 <!-- NETWORK -->
 <div class="section">
-    <h2>NETWORK</h2>
-    <p><span class="label">Connection Type:</span> <span id="connection"></span></p>
-    <p><span class="label">Downlink Speed:</span> <span id="downlink"></span> Mbps</p>
-    <p><span class="label">Effective Latency:</span> <span id="rtt"></span> ms</p>
+  <h2>NETWORK</h2>
+  <p><span class="label">Connection Type:</span> <span id="connection"></span></p>
+  <p><span class="label">Downlink Speed:</span> <span id="downlink"></span> Mbps</p>
+  <p><span class="label">Effective Latency:</span> <span id="rtt"></span> ms</p>
 </div>
 
 <!-- DISPLAY -->
 <div class="section">
-    <h2>DISPLAY</h2>
-    <p><span class="label">Screen Resolution:</span> <span id="resolution"></span></p>
-    <p><span class="label">Color Depth:</span> <span id="colorDepth"></span></p>
+  <h2>DISPLAY</h2>
+  <p><span class="label">Screen Resolution:</span> <span id="resolution"></span></p>
+  <p><span class="label">Color Depth:</span> <span id="colorDepth"></span></p>
 </div>
 
 <!-- FINGERPRINT -->
 <div class="section">
-    <h2>FINGERPRINT</h2>
-    <div id="hashBlock"></div>
-    <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
+  <h2>FINGERPRINT</h2>
+  <div id="hashBlock"></div>
+  <p><span class="label">Canvas Fingerprint Hash:</span> <span id="fingerprint"></span></p>
 </div>
 
+<!-- hidden debug output (enable by setting display:block in CSS or via console) -->
+<pre id="debug"></pre>
+
 <script>
-function isIPv6(ip){return ip && ip.includes(":");}
+/* ---------- Utilities ---------- */
+const $ = id => document.getElementById(id);
+function logDebug(...args){
+  try { console.debug(...args); } catch(e){}
+  const dbg = $('debug');
+  dbg.textContent += args.map(a => (typeof a === 'object' ? JSON.stringify(a,null,2) : String(a))).join(' ') + '\n\n';
+}
+function isIPv6(ip){ return !!ip && ip.includes(':'); }
 
-// IP + GEO + SECURITY via ipwho.is
-fetch("https://ipwho.is/")
-  .then(r => r.json())
-  .then(d => {
-    const publicIp = d.ip || "Unavailable";
-    document.getElementById("publicIp").textContent = publicIp;
+/* Expand IPv6 to full nibble reverse for PTR */
+function ipv6ToArpa(ipv6){
+  // normalize and expand using built-in URL trick not available; implement expansion
+  // split and expand hextets
+  const parts = ipv6.split('::');
+  let left = parts[0] ? parts[0].split(':') : [];
+  let right = parts[1] ? parts[1].split(':') : [];
+  // pad with zeros
+  const missing = 8 - (left.length + right.length);
+  const zeros = new Array(missing).fill('0');
+  const full = [...left, ...zeros, ...right].map(h => h.padStart(4,'0')).join('');
+  // full is 32 hex chars; reverse nibbles
+  const nibbles = full.split('').reverse().join('.');
+  return nibbles + '.ip6.arpa';
+}
 
-    document.getElementById("hostname").textContent = d.connection?.domain || "Unavailable";
-    document.getElementById("org").textContent = d.connection?.isp || "Unavailable";
-    document.getElementById("asn").textContent = d.connection?.asn || "Unavailable";
+/* Reverse IPv4 to in-addr.arpa */
+function ipv4ToArpa(ipv4){
+  return ipv4.split('.').reverse().join('.') + '.in-addr.arpa';
+}
 
-    let rep = 100;
-    if (d.security?.vpn) rep -= 30;
-    if (d.security?.proxy) rep -= 20;
-    if (d.security?.tor) rep -= 50;
-    document.getElementById("reputation").textContent = rep;
+/* DoH helper (dns.google and cloudflare-dns) */
+async function dohResolveJson(endpoint, name, type){
+  // endpoint: 'https://dns.google/resolve' or 'https://cloudflare-dns.com/dns-query'
+  // type: 'A','AAAA','PTR','TXT' etc.
+  const url = endpoint.includes('cloudflare') ?
+    `${endpoint}?name=${encodeURIComponent(name)}&type=${type}` :
+    `${endpoint}?name=${encodeURIComponent(name)}&type=${type}`;
+  const headers = endpoint.includes('cloudflare') ? { 'accept':'application/dns-json' } : {};
+  const res = await fetch(url, { headers });
+  return res.ok ? res.json() : null;
+}
 
-    if (d.flag?.img) document.getElementById("flag").src = d.flag.img;
-
-    document.getElementById("city").textContent = d.city || "Unavailable";
-    document.getElementById("region").textContent = d.region || "Unavailable";
-    document.getElementById("country").textContent = d.country || "Unavailable";
-    document.getElementById("postal").textContent = d.postal || "Unavailable";
-    document.getElementById("lat").textContent = d.latitude || "Unavailable";
-    document.getElementById("lon").textContent = d.longitude || "Unavailable";
-
-    document.getElementById("vpn").textContent = d.security?.vpn ? "Yes" : "No";
-    document.getElementById("proxy").textContent = d.security?.proxy ? "Yes" : "No";
-    document.getElementById("tor").textContent = d.security?.tor ? "Yes" : "No";
-
-    let score = 0;
-    if (d.security?.vpn) score += 30;
-    if (d.security?.proxy) score += 20;
-    if (d.security?.tor) score += 50;
-    document.getElementById("threat").textContent = score;
-
-    if (!isIPv6(publicIp) && publicIp !== "Unavailable") {
-        const ptrName = publicIp.split(".").reverse().join(".") + ".in-addr.arpa";
-        fetch(`https://dns.google/resolve?name=${ptrName}&type=PTR`)
-          .then(r => r.json())
-          .then(res => {
-              const ans = res.Answer && res.Answer[0] && res.Answer[0].data;
-              document.getElementById("ptr").textContent = ans || "Unavailable";
-          })
-          .catch(() => document.getElementById("ptr").textContent = "Unavailable");
-    } else {
-        document.getElementById("ptr").textContent = "Unavailable (IPv6 PTR not implemented)";
+/* ---------- IP + GEO with robust fallbacks ---------- */
+async function fetchPublicIpAndGeo(){
+  // Try ipwho.is first (gives geo + security)
+  try {
+    const r = await fetch('https://ipwho.is/');
+    if (r.ok){
+      const d = await r.json();
+      if (d && d.ip){
+        logDebug('ipwho.is OK', d);
+        return { source:'ipwho.is', data:d };
+      }
     }
-  })
-  .catch(() => {
-    document.getElementById("publicIp").textContent = "Error";
-  });
+  } catch(e){ logDebug('ipwho.is failed', e); }
 
-// IPv4 / IPv6 diagnostics via DoH
-async function ipDiagnostics(){
-    let v4g=null,v4c=null,v6g=null,v6c=null;
+  // Fallback 1: ipify
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    if (r.ok){
+      const d = await r.json();
+      if (d && d.ip){
+        logDebug('ipify OK', d);
+        return { source:'ipify', data:d };
+      }
+    }
+  } catch(e){ logDebug('ipify failed', e); }
 
-    // IPv4 Google
-    try{
-        const g4 = await fetch("https://dns.google/resolve?name=o-o.myaddr.l.google.com&type=TXT")
-            .then(r=>r.json());
-        v4g = g4.Answer?.[0]?.data?.replace(/"/g,"") || null;
-        document.getElementById("ipv4_google").textContent = v4g || "Unavailable";
-    }catch{document.getElementById("ipv4_google").textContent="Unavailable";}
+  // Fallback 2: Cloudflare trace (text)
+  try {
+    const r = await fetch('https://1.1.1.1/cdn-cgi/trace');
+    if (r.ok){
+      const txt = await r.text();
+      // parse lines like "ip=203.0.113.55"
+      const obj = {};
+      txt.split('\n').forEach(line => {
+        const [k,v] = line.split('=');
+        if (k) obj[k.trim()] = v ? v.trim() : '';
+      });
+      if (obj.ip){
+        logDebug('cloudflare trace OK', obj);
+        return { source:'cloudflare-trace', data:obj };
+      }
+    }
+  } catch(e){ logDebug('cloudflare trace failed', e); }
 
-    // IPv4 Cloudflare
-    try{
-        const c4 = await fetch("https://cloudflare-dns.com/dns-query?name=whoami.cloudflare&type=TXT",
-            {headers:{accept:"application/dns-json"}}).then(r=>r.json());
-        v4c = c4.Answer?.[0]?.data?.replace(/"/g,"") || null;
-        document.getElementById("ipv4_cloudflare").textContent = v4c || "Unavailable";
-    }catch{document.getElementById("ipv4_cloudflare").textContent="Unavailable";}
+  // Fallback 3: ifconfig.co (may be blocked by CORS on some hosts)
+  try {
+    const r = await fetch('https://ifconfig.co/json');
+    if (r.ok){
+      const d = await r.json();
+      if (d && d.ip){
+        logDebug('ifconfig.co OK', d);
+        return { source:'ifconfig.co', data:d };
+      }
+    }
+  } catch(e){ logDebug('ifconfig.co failed', e); }
 
-    // IPv6 Google (pick AAAA record, not CNAME)
-    try{
-        const g6 = await fetch("https://dns.google/resolve?name=ipv6.google.com&type=AAAA")
-            .then(r=>r.json());
-        if (g6.Answer && g6.Answer.length){
-            const aaa = g6.Answer.find(a => a.type === 28) || g6.Answer[g6.Answer.length-1];
-            v6g = aaa.data || null;
+  // All failed
+  logDebug('All IP providers failed');
+  return { source:null, data:null };
+}
+
+/* ---------- Main initialization ---------- */
+(async function init(){
+  // clear debug
+  $('debug').textContent = '';
+
+  // Basic browser/system fields
+  $('browser').textContent = navigator.userAgent.split(' ')[0] || 'Unknown';
+  $('version').textContent = navigator.appVersion || 'Unknown';
+  $('os').textContent = navigator.platform || 'Unknown';
+  $('lang').textContent = navigator.language || 'Unknown';
+  $('timezone').textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+  $('touch').textContent = navigator.maxTouchPoints > 0 ? 'Yes' : 'No';
+  $('cpu').textContent = navigator.hardwareConcurrency || 'Unknown';
+  $('memory').textContent = navigator.deviceMemory || 'Unknown';
+  try {
+    const b = await navigator.getBattery();
+    $('battery').textContent = Math.round(b.level * 100) + '%';
+    $('charging').textContent = b.charging ? 'Yes' : 'No';
+  } catch(e){
+    $('battery').textContent = 'Unknown';
+    $('charging').textContent = 'Unknown';
+  }
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn){
+    $('connection').textContent = conn.effectiveType || 'Unknown';
+    $('downlink').textContent = conn.downlink || 'Unknown';
+    $('rtt').textContent = conn.rtt || 'Unknown';
+  } else {
+    $('connection').textContent = 'Unknown';
+    $('downlink').textContent = 'Unknown';
+    $('rtt').textContent = 'Unknown';
+  }
+  $('resolution').textContent = `${screen.width} x ${screen.height}`;
+  $('colorDepth').textContent = screen.colorDepth || 'Unknown';
+
+  // Canvas fingerprint
+  function canvasFingerprint(){
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = "14px Arial";
+    ctx.fillText('fingerprint_test_string', 2, 2);
+    return btoa(c.toDataURL());
+  }
+  const fp = canvasFingerprint();
+  $('fingerprint').textContent = fp;
+  // render visual block
+  (function renderHashBlock(hash){
+    const block = $('hashBlock');
+    block.innerHTML = '';
+    for (let i=0;i<256;i++){
+      const cell = document.createElement('div');
+      cell.className = 'hashCell';
+      const val = hash.charCodeAt(i % hash.length);
+      cell.style.opacity = ((val % 100) / 100).toString();
+      block.appendChild(cell);
+    }
+  })(fp);
+
+  // Fetch public IP + geo with fallbacks
+  const ipResult = await fetchPublicIpAndGeo();
+  if (!ipResult || !ipResult.data){
+    $('publicIp').textContent = 'Error';
+    logDebug('No IP data available from any provider');
+  } else {
+    // set public IP (primary)
+    const src = ipResult.source;
+    const data = ipResult.data;
+    // ipwho.is returns many fields; other providers return different shapes
+    let publicIp = data.ip || data.IP || data.ipv4 || data.client_ip || data['ip'] || null;
+    if (!publicIp && data.ip) publicIp = data.ip;
+    $('publicIp').textContent = publicIp || 'Unavailable';
+
+    // If ipwho.is was used, populate geo + security fields
+    if (src === 'ipwho.is' && data) {
+      try {
+        $('hostname').textContent = data.connection?.domain || 'Unavailable';
+        $('org').textContent = data.connection?.isp || 'Unavailable';
+        $('asn').textContent = data.connection?.asn || 'Unavailable';
+        $('city').textContent = data.city || 'Unavailable';
+        $('region').textContent = data.region || 'Unavailable';
+        $('country').textContent = data.country || 'Unavailable';
+        $('postal').textContent = data.postal || 'Unavailable';
+        $('lat').textContent = data.latitude || 'Unavailable';
+        $('lon').textContent = data.longitude || 'Unavailable';
+        if (data.flag?.img) $('flag').src = data.flag.img;
+        $('vpn').textContent = data.security?.vpn ? 'Yes' : 'No';
+        $('proxy').textContent = data.security?.proxy ? 'Yes' : 'No';
+        $('tor').textContent = data.security?.tor ? 'Yes' : 'No';
+        let score = 100;
+        if (data.security?.vpn) score -= 30;
+        if (data.security?.proxy) score -= 20;
+        if (data.security?.tor) score -= 50;
+        $('reputation').textContent = score;
+        let threat = 0;
+        if (data.security?.vpn) threat += 30;
+        if (data.security?.proxy) threat += 20;
+        if (data.security?.tor) threat += 50;
+        $('threat').textContent = threat;
+      } catch(e){
+        logDebug('Error populating ipwho.is fields', e);
+      }
+    } else {
+      // Not ipwho.is: leave geo/security blank but show source in debug
+      logDebug('Primary IP source is', src, data);
+      $('hostname').textContent = 'Unavailable';
+      $('org').textContent = 'Unavailable';
+      $('asn').textContent = 'Unavailable';
+      $('city').textContent = '';
+      $('region').textContent = '';
+      $('country').textContent = '';
+      $('postal').textContent = '';
+      $('lat').textContent = '';
+      $('lon').textContent = '';
+      $('flag').src = '';
+      $('vpn').textContent = 'Unknown';
+      $('proxy').textContent = 'Unknown';
+      $('tor').textContent = 'Unknown';
+      $('reputation').textContent = 'Unknown';
+      $('threat').textContent = 'Unknown';
+    }
+
+    // PTR lookup: handle IPv4 and IPv6
+    if (publicIp){
+      if (isIPv6(publicIp)){
+        // IPv6 PTR
+        try {
+          const arpa = ipv6ToArpa(publicIp);
+          const res = await dohResolveJson('https://dns.google/resolve', arpa, 'PTR');
+          const ans = res && res.Answer && res.Answer.find(a => a.type === 12);
+          $('ptr').textContent = ans ? ans.data : 'Unavailable';
+        } catch(e){
+          logDebug('IPv6 PTR failed', e);
+          $('ptr').textContent = 'Unavailable';
         }
-        document.getElementById("ipv6_google").textContent = v6g || "Unavailable";
-    }catch{document.getElementById("ipv6_google").textContent="Unavailable";}
-
-    // IPv6 Cloudflare
-    try{
-        const c6 = await fetch("https://cloudflare-dns.com/dns-query?name=ipv6.cloudflare.com&type=AAAA",
-            {headers:{accept:"application/dns-json"}}).then(r=>r.json());
-        if (c6.Answer && c6.Answer.length){
-            const aaa = c6.Answer.find(a => a.type === 28) || c6.Answer[c6.Answer.length-1];
-            v6c = aaa.data || null;
+      } else {
+        // IPv4 PTR
+        try {
+          const arpa = ipv4ToArpa(publicIp);
+          const res = await dohResolveJson('https://dns.google/resolve', arpa, 'PTR');
+          const ans = res && res.Answer && res.Answer.find(a => a.type === 12);
+          $('ptr').textContent = ans ? ans.data : 'Unavailable';
+        } catch(e){
+          logDebug('IPv4 PTR failed', e);
+          $('ptr').textContent = 'Unavailable';
         }
-        document.getElementById("ipv6_cloudflare").textContent = v6c || "Unavailable";
-    }catch{document.getElementById("ipv6_cloudflare").textContent="Unavailable";}
+      }
+    } else {
+      $('ptr').textContent = 'Unavailable';
+    }
+  } // end ipResult handling
 
+  /* ---------- IPv4/IPv6 diagnostics via DoH (Google + Cloudflare) ---------- */
+  async function ipDiagnostics(){
+    let v4g=null, v4c=null, v6g=null, v6c=null;
+
+    // IPv4 via Google TXT (o-o.myaddr.l.google.com)
+    try {
+      const g4 = await dohResolveJson('https://dns.google/resolve', 'o-o.myaddr.l.google.com', 'TXT');
+      if (g4 && g4.Answer && g4.Answer.length){
+        // TXT may contain "74.125.182.81"
+        const txt = g4.Answer.map(a => a.data).join(' ');
+        v4g = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
+      }
+      $('ipv4_google').textContent = v4g || 'Unavailable';
+    } catch(e){
+      logDebug('IPv4 Google TXT failed', e);
+      $('ipv4_google').textContent = 'Unavailable';
+    }
+
+    // IPv4 via Cloudflare TXT (whoami.cloudflare)
+    try {
+      const c4 = await dohResolveJson('https://cloudflare-dns.com/dns-query', 'whoami.cloudflare', 'TXT');
+      if (c4 && c4.Answer && c4.Answer.length){
+        const txt = c4.Answer.map(a => a.data).join(' ');
+        v4c = txt.replace(/"/g,'').match(/\d+\.\d+\.\d+\.\d+/)?.[0] || null;
+      }
+      $('ipv4_cloudflare').textContent = v4c || 'Unavailable';
+    } catch(e){
+      logDebug('IPv4 Cloudflare TXT failed', e);
+      $('ipv4_cloudflare').textContent = 'Unavailable';
+    }
+
+    // IPv6 via Google (AAAA for ipv6.google.com)
+    try {
+      const g6 = await dohResolveJson('https://dns.google/resolve', 'ipv6.google.com', 'AAAA');
+      if (g6 && g6.Answer && g6.Answer.length){
+        const aaa = g6.Answer.find(a => a.type === 28) || g6.Answer[g6.Answer.length-1];
+        v6g = aaa && aaa.data ? aaa.data : null;
+      }
+      $('ipv6_google').textContent = v6g || 'Unavailable';
+    } catch(e){
+      logDebug('IPv6 Google AAAA failed', e);
+      $('ipv6_google').textContent = 'Unavailable';
+    }
+
+    // IPv6 via Cloudflare (AAAA for ipv6.cloudflare.com)
+    try {
+      const c6 = await dohResolveJson('https://cloudflare-dns.com/dns-query', 'ipv6.cloudflare.com', 'AAAA');
+      if (c6 && c6.Answer && c6.Answer.length){
+        const aaa = c6.Answer.find(a => a.type === 28) || c6.Answer[c6.Answer.length-1];
+        v6c = aaa && aaa.data ? aaa.data : null;
+      }
+      $('ipv6_cloudflare').textContent = v6c || 'Unavailable';
+    } catch(e){
+      logDebug('IPv6 Cloudflare AAAA failed', e);
+      $('ipv6_cloudflare').textContent = 'Unavailable';
+    }
+
+    // Dual-stack status
     const hasV4 = !!(v4g || v4c);
     const hasV6 = !!(v6g || v6c);
+    $('dualStack').textContent = hasV4 && hasV6 ? 'Dual‑stack (IPv4 + IPv6)' :
+                              hasV4 ? 'IPv4 only' :
+                              hasV6 ? 'IPv6 only' : 'No IP detected via DoH';
 
-    document.getElementById("dualStack").textContent =
-        hasV4 && hasV6 ? "Dual‑stack (IPv4 + IPv6)" :
-        hasV4 ? "IPv4 only" :
-        hasV6 ? "IPv6 only" :
-        "No IP detected via DoH";
+    // IPv6 reachability (simple: DoH AAAA responses)
+    $('ipv6Reach').textContent = hasV6 ? 'Reachable' : 'Not reachable';
 
-    document.getElementById("ipv6Reach").textContent = hasV6 ? "Reachable" : "Not reachable";
-
+    // IPv6 privacy extension detection (compare v6 seen by resolvers)
     if (v6g && v6c){
-        document.getElementById("ipv6Privacy").textContent =
-            v6g !== v6c ? "Likely enabled (different IPv6 per resolver)" :
-            "Likely disabled (same IPv6 per resolver)";
-    }else if (hasV6){
-        document.getElementById("ipv6Privacy").textContent = "Unknown (only one resolver reports IPv6)";
-    }else{
-        document.getElementById("ipv6Privacy").textContent = "Unavailable (no IPv6)";
+      $('ipv6Privacy').textContent = v6g !== v6c ? 'Likely enabled (different IPv6 per resolver)' :
+                                              'Likely disabled (same IPv6 per resolver)';
+    } else if (hasV6){
+      $('ipv6Privacy').textContent = 'Unknown (only one resolver reports IPv6)';
+    } else {
+      $('ipv6Privacy').textContent = 'Unavailable (no IPv6)';
     }
-}
-ipDiagnostics();
+  }
 
-// DNS diagnostics
-function runDnsDiagnostics(){
-    document.getElementById("dnsResolver").textContent = "dns.google (DoH)";
-    document.getElementById("dnsProtocol").textContent = "HTTPS (DoH)";
+  await ipDiagnostics();
 
-    fetch("https://dns.google/resolve?name=example.com&type=A&do=1")
-      .then(r=>r.json())
-      .then(res=>{
-          document.getElementById("dnssec").textContent = res.AD ? "Supported" : "Not validated";
-          document.getElementById("ecs").textContent = res.edns_client_subnet || "Not present";
-          document.getElementById("resolverCountry").textContent = "Unknown (DoH endpoint)";
-          document.getElementById("resolverAsn").textContent = "Unknown (DoH endpoint)";
+  /* ---------- DNS diagnostics (DoH) ---------- */
+  (function runDnsDiagnostics(){
+    $('dnsResolver').textContent = 'dns.google (DoH)';
+    $('dnsProtocol').textContent = 'HTTPS (DoH)';
+
+    fetch('https://dns.google/resolve?name=example.com&type=A&do=1')
+      .then(r => r.json())
+      .then(res => {
+        $('dnssec').textContent = res.AD ? 'Supported' : 'Not validated';
+        $('ecs').textContent = res.edns_client_subnet || 'Not present';
+        $('resolverCountry').textContent = 'Unknown (DoH endpoint)';
+        $('resolverAsn').textContent = 'Unknown (DoH endpoint)';
+      })
+      .catch(e => {
+        logDebug('DNS diagnostics failed', e);
+        $('dnssec').textContent = 'Error';
+        $('ecs').textContent = 'Error';
       });
 
-    const bogus = "nonexistent-"+Math.random().toString(16).slice(2)+".example";
+    const bogus = 'nonexistent-' + Math.random().toString(16).slice(2) + '.example';
     fetch(`https://dns.google/resolve?name=${bogus}&type=A&do=1`)
-      .then(r=>r.json())
-      .then(res=>{
-          document.getElementById("nxdomain").textContent =
-              res.Status===3 ? "Proper NXDOMAIN" : `Unexpected (${res.Status})`;
-          document.getElementById("dnsLeak").textContent = "No leak (DoH)";
+      .then(r => r.json())
+      .then(res => {
+        $('nxdomain').textContent = res.Status === 3 ? 'Proper NXDOMAIN' : `Unexpected (${res.Status})`;
+        $('dnsLeak').textContent = 'No leak (DoH)';
+      })
+      .catch(e => {
+        logDebug('NXDOMAIN test failed', e);
+        $('nxdomain').textContent = 'Error';
+        $('dnsLeak').textContent = 'Error';
       });
-}
-runDnsDiagnostics();
+  })();
 
-// Browser & system
-document.getElementById("browser").textContent = navigator.userAgent.split(" ")[0];
-document.getElementById("version").textContent = navigator.appVersion;
-document.getElementById("os").textContent = navigator.platform;
-document.getElementById("lang").textContent = navigator.language;
-document.getElementById("timezone").textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
-document.getElementById("touch").textContent = navigator.maxTouchPoints>0?"Yes":"No";
-
-// Hardware
-document.getElementById("cpu").textContent = navigator.hardwareConcurrency;
-document.getElementById("memory").textContent = navigator.deviceMemory || "Unknown";
-
-navigator.getBattery().then(b=>{
-    document.getElementById("battery").textContent = Math.round(b.level*100)+"%";
-    document.getElementById("charging").textContent = b.charging?"Yes":"No";
-});
-
-// Network
-const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-if (conn){
-    document.getElementById("connection").textContent = conn.effectiveType;
-    document.getElementById("downlink").textContent = conn.downlink;
-    document.getElementById("rtt").textContent = conn.rtt;
-}else{
-    document.getElementById("connection").textContent = "Unknown";
-    document.getElementById("downlink").textContent = "Unknown";
-    document.getElementById("rtt").textContent = "Unknown";
-}
-
-// Display
-document.getElementById("resolution").textContent = `${screen.width} x ${screen.height}`;
-document.getElementById("colorDepth").textContent = screen.colorDepth;
-
-// Fingerprint
-function canvasFingerprint(){
-    const c=document.createElement("canvas");
-    const ctx=c.getContext("2d");
-    ctx.textBaseline="top";
-    ctx.font="14px Arial";
-    ctx.fillText("fingerprint_test_string",2,2);
-    return btoa(c.toDataURL());
-}
-const fp = canvasFingerprint();
-document.getElementById("fingerprint").textContent = fp;
-
-function renderHashBlock(hash){
-    const block = document.getElementById("hashBlock");
-    block.innerHTML = "";
-    for(let i=0;i<256;i++){
-        const cell=document.createElement("div");
-        cell.className="hashCell";
-        const val=hash.charCodeAt(i%hash.length);
-        cell.style.opacity=(val%100)/100;
-        block.appendChild(cell);
-    }
-}
-renderHashBlock(fp);
+})(); // end init
 </script>
 
 </body>
